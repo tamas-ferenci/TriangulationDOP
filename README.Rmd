@@ -1,15 +1,17 @@
-Háromszögeléssel történő helyzetmeghatározás pontossághígulási (DOP)
-értékei
-================
-Ferenci Tamás (<https://www.medstat.hu/>)
+---
+title: "Háromszögeléssel történő helyzetmeghatározás pontossághígulási (DOP) értékei"
+author:
+  - Ferenci Tamás (https://www.medstat.hu/)
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 12, dpi = 300)
+```
 
 ## Bevezető gondolatok
 
-Ez a repozitórium a ‘Ferenci Tamás - A háromszögelés precíz
-hibaanalízisének néhány lehetősége’
-[videóban](https://www.youtube.com/watch?v=svJ_mHkqlJI) vizsgált egyik
-kérdés, a háromszögelés pontossághígulásának (DOP) kiszámításához
-tartozó programkódokat mutatja.
+Ez a repozitórium a 'Ferenci Tamás - A háromszögelés precíz hibaanalízisének néhány lehetősége' [videóban](https://www.youtube.com/watch?v=svJ_mHkqlJI) vizsgált egyik kérdés, a háromszögelés pontossághígulásának (DOP) kiszámításához tartozó programkódokat mutatja.
 
 ## A programkód
 
@@ -17,30 +19,27 @@ tartozó programkódokat mutatja.
 
 A vizualizáláshoz a `ggplot2` csomagot fogjuk használni:
 
-``` r
+```{r}
 library(ggplot2)
 ```
 
 Jól fog jönni a Moore-Penrose pszeudoinverz:
 
-``` r
+```{r}
 pinv <- function(x) solve(t(x)%*%x)%*%t(x)
 ```
 
-Defináljunk egy függvényt, ami megadja adott oldalú szabályos sokszög
-csúcsainak koordinátáit (az ilyen elrendezésű adótornyok esetének
-vizsgálatához):
+Defináljunk egy függvényt, ami megadja adott oldalú szabályos sokszög csúcsainak koordinátáit (az ilyen elrendezésű adótornyok esetének vizsgálatához):
 
-``` r
+```{r}
 PolygonPoints <- function(n, a = 1) data.frame(x = a*cos(2*pi*((1:n)-1)/n), y = a*sin(2*pi*((1:n)-1)/n))
 ```
 
 ### DOP számítás
 
-A videóban részletesen bemutatott FOSM (elsőrendű, második momentumig
-menő) közelítés implementációja:
+A videóban részletesen bemutatott FOSM (elsőrendű, második momentumig menő) közelítés implementációja:
 
-``` r
+```{r}
 DOPFOSM <- function(vehicle, stations) {
   H <- t(sapply(1:nrow(stations), function(j)
     c(-(vehicle$y-stations$y[j]), vehicle$x-stations$x[j])/
@@ -50,14 +49,11 @@ DOPFOSM <- function(vehicle, stations) {
 }
 ```
 
-A paraméterek az adók pozíciói (`stations`) és az, hogy melyik pontban
-kérdezzük le a DOP-ot (hol van az egység ami a helymeghatározást végzi,
-`vehicle`).
+A paraméterek az adók pozíciói (`stations`) és az, hogy melyik pontban kérdezzük le a DOP-ot (hol van az egység ami a helymeghatározást végzi, `vehicle`).
 
-A videóban utalásszerűen szerepelt MC (Monte Carlo-szimulációs) módszer
-implementációja:
+A videóban utalásszerűen szerepelt MC (Monte Carlo-szimulációs) módszer implementációja:
 
-``` r
+```{r}
 DOPMC <- function(vehicle, stations, Nsim = 10000, noisesd = 0.1) {
   mcres <- t(replicate(Nsim, {
     thetas <- sapply(1:nrow(stations),
@@ -69,12 +65,11 @@ DOPMC <- function(vehicle, stations, Nsim = 10000, noisesd = 0.1) {
 }
 ```
 
-Az előbbieken túl további paraméter a szimulációk száma (`Nsim`) és a
-rákevert – normálisnak feltételezett – zaj szórása (`noisesd`).
+Az előbbieken túl további paraméter a szimulációk száma (`Nsim`) és a rákevert -- normálisnak feltételezett -- zaj szórása (`noisesd`).
 
 Egy teljes rács végigszámításához definiáljunk egy külön függvényt:
 
-``` r
+```{r}
 DOPgrid <- function(simgrid, stations, method = DOPFOSM) {
   sapply(1:nrow(simgrid), function(i) method(simgrid[i,], stations))
 }
@@ -84,13 +79,11 @@ simgrid <- expand.grid(x = seq(-2, 2, 0.01), y = seq(-2, 2, 0.01))
 
 ## Eredmények
 
-E függvények használatával már könnyen kiszámíthatjuk a DOP-okat
-különböző geometriákra.
+E függvények használatával már könnyen kiszámíthatjuk a DOP-okat különböző geometriákra.
 
-Példaként nézzük meg a különböző számú állomásokat 2-től 10-ig, ha
-szabályos sokszög-alakban vannak elrendezve:
+Példaként nézzük meg a különböző számú állomásokat 2-től 10-ig, ha szabályos sokszög-alakban vannak elrendezve:
 
-``` r
+```{r, animation.hook = "gifski", warning = FALSE}
 for(k in 2:10) {
   stations <- PolygonPoints(k)
   
@@ -104,5 +97,3 @@ for(k in 2:10) {
           coord_fixed() + labs(title = k))
 }
 ```
-
-![](README_files/figure-gfm/unnamed-chunk-7-.gif)<!-- -->
